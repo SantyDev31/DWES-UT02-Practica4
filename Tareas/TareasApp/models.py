@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.forms import ValidationError
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 # Model to stablish the roles of student and teacher to the user extending from AbstractUser wich already gives us the necessary fields
