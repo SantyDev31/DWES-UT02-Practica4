@@ -56,7 +56,7 @@ class Task(models.Model):
     title = models.CharField(max_length=150)
     description = models.TextField(blank=True)
     task_type = models.CharField(max_length=2,choices=TYPE_CHOICES)
-    task_status = models.CharField(max_length=2,choices=STATUS_CHOICES)
+    task_status = models.CharField(max_length=2,choices=STATUS_CHOICES, default=STATUS_PENDING)
 
     created_by = models.ForeignKey(
         User,
@@ -64,7 +64,15 @@ class Task(models.Model):
         related_name='created_tasks'
     )
 
-    group = models.ForeignObject(
+    assigned_to = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='assigned_tasks'
+    )
+
+    group = models.ForeignKey(
         Group,
         null=True,
         blank=True,
@@ -72,9 +80,6 @@ class Task(models.Model):
         related_name='group_tasks'
     )
 
-    requires_validation = models.BooleanField(default=False)
-
-    is_completed = models.BooleanField(default=False)
     completed_by = models.ForeignKey(
         User,
         null=True,
@@ -100,11 +105,32 @@ class Task(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=['task_type']),
+            models.Index(fields=['task_status']),
             models.Index(fields=['created_by']),
-            models.Index(fields=['is_completed']),
         ]
     
     def __str__(self):
         return self.title
+    
+    def needs_validation(self):
+        return self.task_type == self.TYPE_EVALUABLE
+    
+    def mark_completed(self, user):
+        if not self.needs_validation():
+            self.task_status = self.STATUS_COMPLETED
+            self.completed_by = user
+            self.completed_at = timezone.now()
+            self.save()
+        else:
+            self.task_status = self.STATUS_PENDING_REVIEW
+            self.completed_by = user
+            self.completed_at = timezone.now()
+            self.save()
+        if user.is_teacher():
+            self.task_status = self.STATUS_COMPLETED
+            self.validated_by = user
+            self.validated_at = timezone.now()
+            self.save()
+
     
     
