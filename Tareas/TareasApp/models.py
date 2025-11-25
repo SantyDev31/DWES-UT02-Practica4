@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.forms import ValidationError
 from django.utils import timezone
 
 # Model to stablish the roles of student and teacher to the user extending from AbstractUser wich already gives us the necessary fields
@@ -118,9 +119,18 @@ class Task(models.Model):
             models.Index(fields=['created_by']),
         ]
     
+
+    def clean(self):
+        if(self.task_type == self.TYPE_INDIVIDUAL and self.group is not None):
+            raise ValidationError("Individual tasks cant be assigned to groups.")
+        if(self.task_type == self.TYPE_GROUP and self.assigned_to is not None):
+            raise ValidationError("Group tasks cant be assigned to individuals alone.")
+        
+        return super().clean()
+
     def __str__(self):
         return self.title
-    
+
     def needs_validation(self):
         return self.task_type == self.TYPE_EVALUABLE
     
@@ -130,18 +140,21 @@ class Task(models.Model):
             self.completed_by = user
             self.completed_at = timezone.now()
             self.save()
-
+            return
+        
         if user.is_student() and self.needs_validation():
             self.task_status = self.STATUS_PENDING_REVIEW
             self.completed_by = user
             self.completed_at = timezone.now()
             self.save()
+            return
 
         if user.is_teacher() and self.needs_validation():
             self.task_status = self.STATUS_COMPLETED
             self.validated_by = user
             self.validated_at = timezone.now()
             self.save()
+            return
 
     
     
