@@ -25,7 +25,16 @@ class User(AbstractUser):
 # Model for the groups of users
 class Group(models.Model):
     name = models.CharField(max_length=100)
-    member = models.ManyToManyField(User,related_name='student_groups')
+    members = models.ManyToManyField(User,related_name='student_groups',limit_choices_to={'role': User.ROLE_STUDENT})
+
+    tutor = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        related_name='tutored_groups',
+        on_delete=models.SET_NULL,
+        limit_choices_to={'role': User.ROLE_TEACHER}
+    )
 
     def __str__(self):
         return self.name
@@ -116,17 +125,19 @@ class Task(models.Model):
         return self.task_type == self.TYPE_EVALUABLE
     
     def mark_completed(self, user):
-        if not self.needs_validation():
+        if user.is_student() and not self.needs_validation():
             self.task_status = self.STATUS_COMPLETED
             self.completed_by = user
             self.completed_at = timezone.now()
             self.save()
-        else:
+
+        if user.is_student() and self.needs_validation():
             self.task_status = self.STATUS_PENDING_REVIEW
             self.completed_by = user
             self.completed_at = timezone.now()
             self.save()
-        if user.is_teacher():
+
+        if user.is_teacher() and self.needs_validation():
             self.task_status = self.STATUS_COMPLETED
             self.validated_by = user
             self.validated_at = timezone.now()
