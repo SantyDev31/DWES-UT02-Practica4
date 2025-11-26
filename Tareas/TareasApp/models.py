@@ -68,12 +68,6 @@ class Task(models.Model):
     task_type = models.CharField(max_length=2,choices=TYPE_CHOICES)
     task_status = models.CharField(max_length=2,choices=STATUS_CHOICES, default=STATUS_PENDING)
 
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='created_tasks'
-    )
-
     assigned_to = models.ForeignKey(
         User,
         null=True,
@@ -110,6 +104,11 @@ class Task(models.Model):
 
     grade = models.DecimalField(max_digits=4,decimal_places=2,null=True,blank=True)
 
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_tasks'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

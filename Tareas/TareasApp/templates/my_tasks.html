@@ -1,0 +1,7 @@
+<h1> My Tasks </h1>
+
+<ul>
+    {% for task in tasks %}
+        <li>{{ task.title }} - {{ task.get_task_status_display }} </li>
+    {% endfor %}
+</ul>
